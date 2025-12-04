@@ -1,0 +1,9 @@
+pip install -r requirements.txt (El requirements contiene las dependencias del proyecto)
+
+python main.py (Correr el proyecto)
+
+Endpoints:
+POST /api/cliente/registrar
+POST /api/cliente/login
+POST /api/cliente/enviar-codigo
+POST /api/cliente/validar-codigo

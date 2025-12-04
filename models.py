@@ -1,18 +1,17 @@
+from database import db
 import bcrypt
 
-clientes = []
-codigos_temporales = []
+class Cliente(db.Model):
+    __tablename__ = "clientes"
 
-class Cliente:
-    def __init__(self, id, nombres, correo, password_hash):
-        self.id = id
-        self.nombres = nombres
-        self.correo = correo
-        self.password_hash = password_hash
+    id = db.Column(db.Integer, primary_key=True)
+    nombres = db.Column(db.String(50), nullable=False)
+    correo = db.Column(db.String(50), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
 
     @staticmethod
     def buscar_por_correo(correo):
-        return next((c for c in clientes if c.correo == correo), None)
+        return Cliente.query.filter_by(correo=correo).first()
 
     def verificar_password(self, password):
         return bcrypt.checkpw(password.encode('utf-8'), self.password_hash)

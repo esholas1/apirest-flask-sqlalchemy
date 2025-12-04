@@ -1,27 +1,38 @@
 from flask import Blueprint, request, jsonify
-from models import clientes, codigos_temporales, Cliente
+from models import Cliente
+from database import db
 import bcrypt
 import random
 from datetime import datetime, timedelta
 
 cliente_bp = Blueprint('cliente', __name__)
 
+codigos_temporales = []
+
 @cliente_bp.route("/registrar", methods=["POST"])
 def registrar():
     data = request.get_json()
+
     if Cliente.buscar_por_correo(data["correo"]):
         return jsonify({"ok": False, "message": "Correo ya registrado"}), 409
 
     password_hash = bcrypt.hashpw(data["passwordd"].encode('utf-8'), bcrypt.gensalt())
-    nuevo_cliente = Cliente(len(clientes)+1, data["nombres"], data["correo"], password_hash)
 
-    clientes.append(nuevo_cliente)
+    nuevo = Cliente(
+        nombres=data["nombres"],
+        correo=data["correo"],
+        password_hash=password_hash
+    )
+
+    db.session.add(nuevo)
+    db.session.commit()
 
     return jsonify({
         "ok": True,
-        "content": {"id": nuevo_cliente.id, "nombre": nuevo_cliente.nombres},
+        "content": {"id": nuevo.id, "nombre": nuevo.nombres},
         "message": "Cliente registrado correctamente"
     }), 201
+
 
 @cliente_bp.route("/login", methods=["POST"])
 def login():
@@ -41,6 +52,7 @@ def login():
         "message": "Login exitoso"
     })
 
+
 @cliente_bp.route("/enviar-codigo", methods=["POST"])
 def enviar_codigo():
     data = request.get_json()
@@ -52,13 +64,18 @@ def enviar_codigo():
     codigo = random.randint(1000, 9999)
     caducidad = datetime.now() + timedelta(minutes=5)
 
-    codigos_temporales.append({"id": cliente.id, "codigo": codigo, "expira": caducidad})
+    codigos_temporales.append({
+        "id": cliente.id,
+        "codigo": codigo,
+        "expira": caducidad
+    })
 
     return jsonify({
         "ok": True,
-        "codigo": codigo,
+        "codigo_simulado": codigo,
         "message": "Código enviado"
     })
+
 
 @cliente_bp.route("/validar-codigo", methods=["POST"])
 def validar_codigo():
